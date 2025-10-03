@@ -1,0 +1,12 @@
+﻿{
+  "settings": {
+    "git": {
+      "searchPaths": ["C:\\Dev"],
+      "sizeThresholdGB": 15
+    },
+    "general": {
+      "reportsPath": "C:\\MaintenanceReports",
+      "silentMode": false
+    }
+  }
+}

@@ -1,0 +1,30 @@
+﻿# PowerShell
+*.ps1~
+
+# Конфигурация
+config/maintenance-config.json
+
+# Логи
+*.log
+logs/
+
+# Отчеты
+reports/
+*.report.json
+
+# Временные файлы
+*.tmp
+*.temp
+~$*
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Тесты
+TestResults/
