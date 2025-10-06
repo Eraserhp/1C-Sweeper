@@ -278,14 +278,18 @@ function Complete-Report {
     )
     
     try {
-        $endTime = Get-Date
-        $Report.Duration = [int](($endTime - $Report.StartTime).TotalSeconds)
-        
-        # Удаляем служебное поле StartTime из финального отчета
-        $Report.Remove('StartTime')
+        if ($Report.ContainsKey('StartTime')) {
+            $endTime = Get-Date
+            $Report.Duration = [int](($endTime - $Report.StartTime).TotalSeconds)
+            
+            # Удаляем служебное поле StartTime из финального отчета
+            $Report.Remove('StartTime')
+        }
         
         # Округляем TotalSpaceSaved
-        $Report.Summary.TotalSpaceSaved = [Math]::Round($Report.Summary.TotalSpaceSaved, 2)
+        if ($Report.ContainsKey('Summary')) {
+            $Report.Summary.TotalSpaceSaved = [Math]::Round($Report.Summary.TotalSpaceSaved, 2)
+        }
     }
     catch {
         Write-LogError "Ошибка завершения отчета: $($_.Exception.Message)"
