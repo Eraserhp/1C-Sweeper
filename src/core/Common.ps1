@@ -438,7 +438,7 @@ function Format-Duration {
     $parts = @()
     if ($hours -gt 0) { $parts += "${hours}ч" }
     if ($minutes -gt 0) { $parts += "${minutes}м" }
-    if ($secs -gt 0 -or $parts.Count -eq 0) { $parts += "${secs}с" }
+    if ($secs -gt 0 -or @($parts).Count -eq 0) { $parts += "${secs}с" }
     
     return $parts -join ' '
 }

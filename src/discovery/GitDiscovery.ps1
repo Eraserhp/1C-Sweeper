@@ -71,7 +71,7 @@ function Find-GitRepositories {
         $currentDepth = 0
         $foldersToCheck = @($SearchPath)
         
-        while ($currentDepth -lt $MaxDepth -and $foldersToCheck.Count -gt 0) {
+        while ($currentDepth -lt $MaxDepth -and @($foldersToCheck).Count -gt 0) {
             $nextLevelFolders = @()
             
             foreach ($folder in $foldersToCheck) {
@@ -301,10 +301,10 @@ function Filter-GitRepositoriesBySize {
     
     Write-LogInfo "`nРезультат фильтрации:"
     Write-LogSuccess "  - Подходящих: $($matched.Count)"
-    if ($belowThreshold.Count -gt 0) {
+    if (@($belowThreshold).Count -gt 0) {
         Write-LogInfo "  - Меньше порога: $($belowThreshold.Count)"
     }
-    if ($aboveThreshold.Count -gt 0) {
+    if (@($aboveThreshold).Count -gt 0) {
         Write-LogInfo "  - Больше порога: $($aboveThreshold.Count)"
     }
     

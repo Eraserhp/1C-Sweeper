@@ -128,7 +128,7 @@ function Test-ConfigurationValid {
     if ($Config.Database.SizeThresholdGB -le 0) { $errors += "DB threshold" }
     if ([string]::IsNullOrWhiteSpace($Config.General.ReportsPath)) { $errors += "No reports path" }
     if ($Config.General.MaxParallelTasks -lt 1) { $errors += "Parallel tasks" }
-    return @{ IsValid = ($errors.Count -eq 0); Errors = $errors; Warnings = $warnings }
+    return @{ IsValid = (@($errors).Count -eq 0); Errors = $errors; Warnings = $warnings }
 }
 
 function ConvertFrom-Base64Password {

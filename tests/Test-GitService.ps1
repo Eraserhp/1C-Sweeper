@@ -160,9 +160,9 @@ function Test-GitDiscovery {
         # Ищем
         $found = Find-GitRepositories -SearchPath $testRoot -MaxDepth 1
         
-        if ($found.Count -eq 1 -and $found[0] -eq $fakeRepo) {
+        if (@($found).Count -eq 1 -and $found[0] -eq $fakeRepo) {
             Write-Host "  ✓ Репозиторий найден корректно" -ForegroundColor Green
-        } elseif ($found.Count -eq 1) {
+        } elseif (@($found).Count -eq 1) {
             Write-Host "  ✗ Найден неверный путь: $($found[0])" -ForegroundColor Red
             $allPassed = $false
         } else {

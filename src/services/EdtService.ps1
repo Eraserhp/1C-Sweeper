@@ -135,8 +135,8 @@ function Clear-EdtLogs {
                     $result.Errors += "Не удалось удалить лог: $($logFile.FullName)"
                 }
             }
-            if ($logFiles.Count -gt 0) {
-                Write-LogInfo "    ✓ Удалено логов плагинов: $($logFiles.Count)"
+            if (@($logFiles).Count -gt 0) {
+                Write-LogInfo "    ✓ Удалено логов плагинов: $(@($logFiles).Count)"
             }
         }
     }
@@ -381,7 +381,7 @@ function Invoke-EdtMaintenance {
         $result.Duration = [int]((Get-Date) - $startTime).TotalSeconds
         
         # Итоги
-        $result.Success = ($result.Errors.Count -eq 0)
+        $result.Success = (@($result.Errors).Count -eq 0)
         
         if ($result.Success) {
             Write-LogSuccess "Обслуживание завершено"

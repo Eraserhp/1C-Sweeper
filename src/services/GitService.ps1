@@ -446,15 +446,15 @@ function Invoke-GitMaintenance {
         Write-LogSuccess "Освобождено:      $spaceSaved ГБ"
         Write-LogInfo "Время:            $(Format-Duration -Seconds ([int]$duration))"
         
-        if ($errors.Count -gt 0) {
-            Write-LogWarning "Ошибки: $($errors.Count)"
+        if (@($errors).Count -gt 0) {
+            Write-LogWarning "Ошибки: $(@($errors).Count)"
             foreach ($error in $errors) {
                 Write-LogWarning "  - $error"
             }
         }
         
         return @{
-            Success = ($errors.Count -eq 0)
+            Success = (@($errors).Count -eq 0)
             Skipped = $false
             Path = $RepoPath
             SizeBefore = $sizeBeforeGB

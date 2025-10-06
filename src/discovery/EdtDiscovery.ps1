@@ -133,7 +133,7 @@ function Get-AllEdtWorkspaces {
         Write-LogSeparator -Title "ПОИСК EDT WORKSPACE"
         
         # 1. Обработка явно указанных workspace
-        if ($ExplicitPaths.Count -gt 0) {
+        if (@($ExplicitPaths).Count -gt 0) {
             Write-LogInfo "Проверка явно указанных workspace ($($ExplicitPaths.Count))..."
             
             foreach ($wsPath in $ExplicitPaths) {
@@ -153,7 +153,7 @@ function Get-AllEdtWorkspaces {
         }
         
         # 2. Автоматический поиск в указанных папках
-        if ($SearchPaths.Count -gt 0) {
+        if (@($SearchPaths).Count -gt 0) {
             Write-LogInfo "Автоматический поиск в папках ($($SearchPaths.Count))..."
             
             foreach ($searchPath in $SearchPaths) {
@@ -180,14 +180,14 @@ function Get-AllEdtWorkspaces {
             Get-NormalizedPath -Path $_
         } | Select-Object -Unique
         
-        if ($uniqueWorkspaces.Count -eq 0) {
+        if (@($uniqueWorkspaces).Count -eq 0) {
             Write-LogWarning "Не найдено ни одного workspace для обслуживания"
             return @()
         }
         
-        Write-LogSuccess "Итого EDT workspace для обслуживания: $($uniqueWorkspaces.Count)"
+        Write-LogSuccess "Итого EDT workspace для обслуживания: $(@($uniqueWorkspaces).Count)"
         Write-LogInfo "  - Явно указанных: $($ExplicitPaths.Count)"
-        Write-LogInfo "  - Найдено автопоиском: $($uniqueWorkspaces.Count - $ExplicitPaths.Count)"
+        Write-LogInfo "  - Найдено автопоиском: $(@($uniqueWorkspaces).Count - @($ExplicitPaths).Count)"
         
         # 4. Фильтрация по размеру (если задан порог)
         if ($SizeThresholdGB -gt 0) {
@@ -254,7 +254,7 @@ function Get-FilteredEdtWorkspaces {
             }
         }
         
-        Write-LogInfo ""
+        Write-LogSeparator
         Write-LogInfo "Результат фильтрации:"
         Write-LogSuccess "  - Подходящих: $($filtered.Count)"
         if ($belowThreshold -gt 0) {

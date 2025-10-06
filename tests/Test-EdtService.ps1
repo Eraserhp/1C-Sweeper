@@ -235,7 +235,7 @@ function Test-EdtDiscovery {
         # Поиск
         $found = Find-EdtWorkspaces -SearchPath $testDir -MaxDepth 1
         
-        if ($found.Count -eq 2) {
+        if (@($found).Count -eq 2) {
             Write-Host "  ✓ Найдено workspace: $($found.Count)" -ForegroundColor Green
         } else {
             Write-Host "  ✗ Ожидалось 2, найдено: $($found.Count)" -ForegroundColor Red
@@ -260,7 +260,7 @@ function Test-EdtDiscovery {
         # Получаем все workspace
         $all = Get-AllEdtWorkspaces -ExplicitPaths @($explicitWs) -SearchPaths @() -SizeThresholdGB 0
         
-        if ($all.Count -ge 1) {
+        if (@($all).Count -ge 1) {
             Write-Host "  ✓ Явный workspace обработан корректно" -ForegroundColor Green
         } else {
             Write-Host "  ✗ Явный workspace не найден" -ForegroundColor Red
@@ -285,7 +285,7 @@ function Test-EdtDiscovery {
         # Фильтрация с большим порогом
         $filtered = Get-FilteredEdtWorkspaces -Workspaces @($smallWs) -SizeThresholdGB 999
         
-        if ($filtered.Count -eq 0) {
+        if (@($filtered).Count -eq 0) {
             Write-Host "  ✓ Фильтрация по размеру работает" -ForegroundColor Green
         } else {
             Write-Host "  ✗ Ошибка фильтрации" -ForegroundColor Red
@@ -295,7 +295,7 @@ function Test-EdtDiscovery {
         # Фильтрация с нулевым порогом
         $allWs = Get-FilteredEdtWorkspaces -Workspaces @($smallWs) -SizeThresholdGB 0
         
-        if ($allWs.Count -eq 1) {
+        if (@($allWs).Count -eq 1) {
             Write-Host "  ✓ При нулевом пороге все workspace включены" -ForegroundColor Green
         }
         
