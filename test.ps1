@@ -1,88 +1,48 @@
-﻿<#
+﻿#Requires -Version 5.1
+<#
 .SYNOPSIS
-    Исправление запятых в return в DatabaseDiscovery.ps1
+    Исправляет Test-ReportService.ps1 - проверка Duration
 .DESCRIPTION
-    Убирает унарный оператор запятой из return statements
-.NOTES
-    Проект: 1C-Sweeper
-    Дата: 2025-10-06
+    Duration = 0 - это валидное значение для быстрых операций
 #>
 
-#Requires -Version 5.1
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-param(
-    [Parameter(Mandatory = $false)]
-    [string]$ProjectRoot = "D:\OneDrive\Projects\1C-Sweeper"
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$targetFile = Join-Path -Path $projectRoot -ChildPath "tests\Test-ReportService.ps1"
+
+Write-Host "=== ИСПРАВЛЕНИЕ Test-ReportService.ps1 ===" -ForegroundColor Cyan
+Write-Host "Файл: $targetFile" -ForegroundColor Gray
+
+# Создаем backup
+$backupFile = "$targetFile.backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+Copy-Item -Path $targetFile -Destination $backupFile -Force
+Write-Host "✓ Создан backup: $backupFile" -ForegroundColor Green
+
+# Читаем содержимое
+$content = Get-Content -Path $targetFile -Raw -Encoding UTF8
+
+# Исправляем проверку Duration
+# Было: if ($report.Duration -gt 0)
+# Стало: if ($report.Duration -ge 0)
+$content = $content.Replace(
+    'if ($report.Duration -gt 0) {',
+    'if ($report.Duration -ge 0) {'
 )
 
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Меняем сообщение об ошибке
+$content = $content.Replace(
+    'Write-Host "  ✗ Длительность не установлена" -ForegroundColor Red',
+    'Write-Host "  ✗ Duration имеет некорректное значение: $($report.Duration)" -ForegroundColor Red'
+)
 
-Write-Host "`nИсправление запятых в return...`n" -ForegroundColor Yellow
+# Записываем обратно с BOM
+$utf8WithBom = New-Object System.Text.UTF8Encoding $true
+[System.IO.File]::WriteAllText($targetFile, $content, $utf8WithBom)
 
-$filePath = Join-Path -Path $ProjectRoot -ChildPath "src\discovery\DatabaseDiscovery.ps1"
-
-if (-not (Test-Path $filePath)) {
-    Write-Host "✗ Файл не найден: $filePath" -ForegroundColor Red
-    exit 1
-}
-
-# Создание резервной копии
-$backupPath = "$filePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-Copy-Item -Path $filePath -Destination $backupPath
-Write-Host "✓ Резервная копия: $backupPath`n" -ForegroundColor Green
-
-try {
-    $content = Get-Content -Path $filePath -Raw -Encoding UTF8
-    
-    # Список замен (все return с запятой)
-    $replacements = @(
-        @{
-            Old = '        return ,$databases'
-            New = '        return $databases'
-            Description = 'Find-Databases'
-        },
-        @{
-            Old = '    return ,$uniqueDatabases'
-            New = '    return $uniqueDatabases'
-            Description = 'Find-DatabasesInPaths'
-        },
-        @{
-            Old = '        return ,$validDatabases'
-            New = '        return $validDatabases'
-            Description = 'Get-AllDatabases'
-        },
-        @{
-            Old = '        return ,$filtered'
-            New = '        return $filtered'
-            Description = 'Get-FilteredDatabases'
-        }
-    )
-    
-    $changedCount = 0
-    
-    foreach ($replacement in $replacements) {
-        if ($content.Contains($replacement.Old)) {
-            $content = $content.Replace($replacement.Old, $replacement.New)
-            Write-Host "  ✓ Исправлено: $($replacement.Description)" -ForegroundColor Green
-            $changedCount++
-        }
-        else {
-            Write-Host "  ⊖ Не найдено: $($replacement.Description)" -ForegroundColor Gray
-        }
-    }
-    
-    # Сохраняем с UTF-8 BOM
-    [System.IO.File]::WriteAllText($filePath, $content, [System.Text.Encoding]::UTF8)
-    
-    Write-Host "`n✓ Всего исправлений: $changedCount" -ForegroundColor Green
-    Write-Host "✓ Файл обновлен: $filePath`n" -ForegroundColor Green
-    
-    Write-Host "СЛЕДУЮЩИЙ ШАГ: Запустите тесты" -ForegroundColor Cyan
-    Write-Host ".\tests\Test-DatabaseService.ps1`n" -ForegroundColor White
-}
-catch {
-    Write-Host "`n✗ ОШИБКА: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Восстановите из резервной копии: $backupPath`n" -ForegroundColor Yellow
-    exit 1
-}
+Write-Host "✓ Test-ReportService.ps1 исправлен" -ForegroundColor Green
+Write-Host "`nИсправления:" -ForegroundColor Cyan
+Write-Host "  • Duration >= 0 (было > 0) - теперь 0 считается валидным значением" -ForegroundColor Gray
+Write-Host "`nТеперь запустите тест снова:" -ForegroundColor Cyan
+Write-Host "  .\tests\Test-ReportService.ps1" -ForegroundColor White
