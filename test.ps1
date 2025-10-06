@@ -1,88 +1,88 @@
 ﻿<#
 .SYNOPSIS
-    Исправляет ошибки с массивами в EDT-модулях
+    Исправление запятых в return в DatabaseDiscovery.ps1
 .DESCRIPTION
-    1. Заменяет $logFiles.Count на @($logFiles).Count в EdtService.ps1
-    2. Заменяет ${1} на правильные имена переменных в Test-EdtService.ps1
+    Убирает унарный оператор запятой из return statements
+.NOTES
+    Проект: 1C-Sweeper
+    Дата: 2025-10-06
 #>
 
 #Requires -Version 5.1
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$projectRoot = Split-Path -Parent $scriptDir
-
-Write-Host "`n=== ИСПРАВЛЕНИЕ МАССИВОВ В EDT ===" -ForegroundColor Cyan
-
-# Создаем backup
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$backupDir = Join-Path $projectRoot "backups\fix_edt_arrays_$timestamp"
-New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
-
-# Файлы для исправления
-$filesToFix = @(
-    @{
-        Path = "src\services\EdtService.ps1"
-        Fixes = @(
-            @{ Old = 'Write-LogInfo "    ✓ Удалено логов плагинов: $($logFiles.Count)"'; New = 'Write-LogInfo "    ✓ Удалено логов плагинов: $(@($logFiles).Count)"' }
-        )
-    },
-    @{
-        Path = "tests\Test-EdtService.ps1"
-        Fixes = @(
-            @{ Old = 'if (@(${1}).Count -eq 2) {'; New = 'if (@($found).Count -eq 2) {' }
-            @{ Old = 'if (@(${1}).Count -ge 1) {'; New = 'if (@($all).Count -ge 1) {' }
-            @{ Old = 'if (@(${1}).Count -eq 0) {'; New = 'if (@($filtered).Count -eq 0) {' }
-            @{ Old = 'if (@(${1}).Count -eq 1) {'; New = 'if (@($allWs).Count -eq 1) {' }
-        )
-    }
+param(
+    [Parameter(Mandatory = $false)]
+    [string]$ProjectRoot = "D:\OneDrive\Projects\1C-Sweeper"
 )
 
-$totalFixed = 0
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-foreach ($fileInfo in $filesToFix) {
-    $filePath = Join-Path $projectRoot $fileInfo.Path
+Write-Host "`nИсправление запятых в return...`n" -ForegroundColor Yellow
+
+$filePath = Join-Path -Path $ProjectRoot -ChildPath "src\discovery\DatabaseDiscovery.ps1"
+
+if (-not (Test-Path $filePath)) {
+    Write-Host "✗ Файл не найден: $filePath" -ForegroundColor Red
+    exit 1
+}
+
+# Создание резервной копии
+$backupPath = "$filePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+Copy-Item -Path $filePath -Destination $backupPath
+Write-Host "✓ Резервная копия: $backupPath`n" -ForegroundColor Green
+
+try {
+    $content = Get-Content -Path $filePath -Raw -Encoding UTF8
     
-    if (-not (Test-Path $filePath)) {
-        Write-Host "⚠ Файл не найден: $($fileInfo.Path)" -ForegroundColor Yellow
-        continue
-    }
+    # Список замен (все return с запятой)
+    $replacements = @(
+        @{
+            Old = '        return ,$databases'
+            New = '        return $databases'
+            Description = 'Find-Databases'
+        },
+        @{
+            Old = '    return ,$uniqueDatabases'
+            New = '    return $uniqueDatabases'
+            Description = 'Find-DatabasesInPaths'
+        },
+        @{
+            Old = '        return ,$validDatabases'
+            New = '        return $validDatabases'
+            Description = 'Get-AllDatabases'
+        },
+        @{
+            Old = '        return ,$filtered'
+            New = '        return $filtered'
+            Description = 'Get-FilteredDatabases'
+        }
+    )
     
-    Write-Host "`nОбработка: $($fileInfo.Path)" -ForegroundColor Cyan
+    $changedCount = 0
     
-    # Создаем backup
-    $backupPath = Join-Path $backupDir (Split-Path -Leaf $filePath)
-    Copy-Item -Path $filePath -Destination $backupPath -Force
-    Write-Host "  Backup: $backupPath" -ForegroundColor Gray
-    
-    # Читаем файл
-    $content = [System.IO.File]::ReadAllText($filePath, [System.Text.Encoding]::UTF8)
-    $modified = $false
-    $fixCount = 0
-    
-    # Применяем исправления
-    foreach ($fix in $fileInfo.Fixes) {
-        if ($content.Contains($fix.Old)) {
-            $content = $content.Replace($fix.Old, $fix.New)
-            $modified = $true
-            $fixCount++
-            Write-Host "  ✓ Исправлено: $($fix.Old)" -ForegroundColor Green
+    foreach ($replacement in $replacements) {
+        if ($content.Contains($replacement.Old)) {
+            $content = $content.Replace($replacement.Old, $replacement.New)
+            Write-Host "  ✓ Исправлено: $($replacement.Description)" -ForegroundColor Green
+            $changedCount++
+        }
+        else {
+            Write-Host "  ⊖ Не найдено: $($replacement.Description)" -ForegroundColor Gray
         }
     }
     
-    if ($modified) {
-        # Сохраняем с UTF-8 BOM
-        $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
-        [System.IO.File]::WriteAllText($filePath, $content, $utf8WithBom)
-        Write-Host "  ✓ Сохранено: $fixCount исправлений" -ForegroundColor Green
-        $totalFixed += $fixCount
-    } else {
-        Write-Host "  ⊖ Изменений не требуется" -ForegroundColor Gray
-    }
+    # Сохраняем с UTF-8 BOM
+    [System.IO.File]::WriteAllText($filePath, $content, [System.Text.Encoding]::UTF8)
+    
+    Write-Host "`n✓ Всего исправлений: $changedCount" -ForegroundColor Green
+    Write-Host "✓ Файл обновлен: $filePath`n" -ForegroundColor Green
+    
+    Write-Host "СЛЕДУЮЩИЙ ШАГ: Запустите тесты" -ForegroundColor Cyan
+    Write-Host ".\tests\Test-DatabaseService.ps1`n" -ForegroundColor White
 }
-
-Write-Host "`n=== ИТОГО ===" -ForegroundColor Cyan
-Write-Host "Всего исправлений: $totalFixed" -ForegroundColor Green
-Write-Host "Backup: $backupDir" -ForegroundColor Gray
-Write-Host "`nТеперь можно запустить: .\tests\Test-EdtService.ps1" -ForegroundColor Cyan
+catch {
+    Write-Host "`n✗ ОШИБКА: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Восстановите из резервной копии: $backupPath`n" -ForegroundColor Yellow
+    exit 1
+}

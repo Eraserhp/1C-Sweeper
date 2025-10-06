@@ -445,4 +445,62 @@ function Format-Duration {
 
 #endregion
 
-# При dot-sourcing все функции автоматически доступны
+#endregion
+
+#region Кодирование/декодирование
+
+<#
+.SYNOPSIS
+    Декодирует пароль из Base64
+.PARAMETER EncodedPassword
+    Пароль в кодировке Base64
+.EXAMPLE
+    ConvertFrom-Base64Password -EncodedPassword "QWRtaW4xMjM="
+#>
+function ConvertFrom-Base64Password {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$EncodedPassword
+    )
+    
+    if ([string]::IsNullOrEmpty($EncodedPassword)) {
+        return ""
+    }
+    
+    try {
+        $bytes = [System.Convert]::FromBase64String($EncodedPassword)
+        return [System.Text.Encoding]::UTF8.GetString($bytes)
+    }
+    catch {
+        Write-Warning "Ошибка декодирования пароля: $($_.Exception.Message)"
+        return ""
+    }
+}
+
+<#
+.SYNOPSIS
+    Кодирует пароль в Base64
+.PARAMETER Password
+    Пароль в открытом виде
+.EXAMPLE
+    ConvertTo-Base64Password -Password "Admin123"
+#>
+function ConvertTo-Base64Password {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Password
+    )
+    
+    if ([string]::IsNullOrEmpty($Password)) {
+        return ""
+    }
+    
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Password)
+    return [System.Convert]::ToBase64String($bytes)
+}
+
+#endregion
