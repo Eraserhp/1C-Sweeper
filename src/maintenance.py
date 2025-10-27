@@ -129,10 +129,18 @@ class MaintenanceSystem:
         edt_results = []
         db_results = []
         
+        # Отслеживаем какие секции были обработаны
+        processed_sections = {
+            'git': False,
+            'edt': False,
+            'database': False
+        }
+        
         has_errors = False
         
         # Обрабатываем Git-репозитории
         if 'git' in settings:
+            processed_sections['git'] = True
             self.log_info('=== Processing Git repositories ===')
             try:
                 git_handler = GitHandler(settings['git'], self.silent)
@@ -148,6 +156,7 @@ class MaintenanceSystem:
         
         # Обрабатываем EDT workspaces
         if 'edt' in settings:
+            processed_sections['edt'] = True
             self.log_info('=== Processing EDT workspaces ===')
             try:
                 edt_handler = EdtHandler(settings['edt'], self.silent)
@@ -162,7 +171,9 @@ class MaintenanceSystem:
                 has_errors = True
         
         # Обрабатываем базы 1С
+        db_handler = None
         if 'database' in settings:
+            processed_sections['database'] = True
             self.log_info('=== Processing 1C databases ===')
             try:
                 db_handler = DatabaseHandler(settings['database'], self.silent)
@@ -187,7 +198,8 @@ class MaintenanceSystem:
             edt_results,
             db_results,
             start_time,
-            end_time
+            end_time,
+            processed_sections
         )
         
         # Сохраняем отчет

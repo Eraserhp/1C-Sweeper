@@ -29,7 +29,8 @@ class Reporter:
         edt_results: List[Dict],
         db_results: List[Dict],
         start_time: datetime,
-        end_time: datetime
+        end_time: datetime,
+        processed_sections: Dict[str, bool] = None
     ) -> Dict:
         """
         Сгенерировать отчет о выполненных операциях.
@@ -117,11 +118,16 @@ class Reporter:
                 'databasesSuccess': db_success,
                 'databasesFailed': db_failed,
             },
-            'gitRepositories': git_results,
-            'edtWorkspaces': edt_results,
-            'databases': db_results,
             'errors': errors
         }
+        
+        # Добавляем секции только если они были обработаны
+        if processed_sections and processed_sections.get('git', False):
+            report['gitRepositories'] = git_results
+        if processed_sections and processed_sections.get('edt', False):
+            report['edtWorkspaces'] = edt_results
+        if processed_sections and processed_sections.get('database', False):
+            report['databases'] = db_results
         
         return report
     
@@ -166,29 +172,47 @@ class Reporter:
         print(f'Всего освобождено: {summary["totalSpaceSaved"]} ГБ')
         print()
         
-        # Git-репозитории
-        if summary['gitReposProcessed'] > 0:
-            print(f'Git-репозитории:')
-            print(f'  Обработано: {summary["gitReposProcessed"]}')
-            print(f'  Успешно: {summary["gitReposSuccess"]}')
-            print(f'  Ошибок: {summary["gitReposFailed"]}')
-            print()
+        # Git-репозитории - показываем всегда если есть конфигурация
+        if 'gitRepositories' in report:
+            if summary['gitReposProcessed'] > 0:
+                print(f'Git-репозитории:')
+                print(f'  Обработано: {summary["gitReposProcessed"]}')
+                print(f'  Успешно: {summary["gitReposSuccess"]}')
+                print(f'  Ошибок: {summary["gitReposFailed"]}')
+                print()
+            else:
+                print(f'Git-репозитории:')
+                print(f'  Найдено: 0')
+                print(f'  Причина: Репозитории не найдены в указанных путях')
+                print()
         
-        # EDT workspaces
-        if summary['workspacesProcessed'] > 0:
-            print(f'EDT workspaces:')
-            print(f'  Обработано: {summary["workspacesProcessed"]}')
-            print(f'  Успешно: {summary["workspacesSuccess"]}')
-            print(f'  Ошибок: {summary["workspacesFailed"]}')
-            print()
+        # EDT workspaces - показываем всегда если есть конфигурация
+        if 'edtWorkspaces' in report:
+            if summary['workspacesProcessed'] > 0:
+                print(f'EDT workspaces:')
+                print(f'  Обработано: {summary["workspacesProcessed"]}')
+                print(f'  Успешно: {summary["workspacesSuccess"]}')
+                print(f'  Ошибок: {summary["workspacesFailed"]}')
+                print()
+            else:
+                print(f'EDT workspaces:')
+                print(f'  Найдено: 0')
+                print(f'  Причина: Workspaces не найдены в указанных путях')
+                print()
         
-        # Базы 1С
-        if summary['databasesProcessed'] > 0:
-            print(f'Базы данных 1С:')
-            print(f'  Обработано: {summary["databasesProcessed"]}')
-            print(f'  Успешно: {summary["databasesSuccess"]}')
-            print(f'  Ошибок: {summary["databasesFailed"]}')
-            print()
+        # Базы 1С - показываем всегда если есть конфигурация
+        if 'databases' in report:
+            if summary['databasesProcessed'] > 0:
+                print(f'Базы данных 1С:')
+                print(f'  Обработано: {summary["databasesProcessed"]}')
+                print(f'  Успешно: {summary["databasesSuccess"]}')
+                print(f'  Ошибок: {summary["databasesFailed"]}')
+                print()
+            else:
+                print(f'Базы данных 1С:')
+                print(f'  Найдено: 0')
+                print(f'  Причина: Базы данных не найдены в указанных путях')
+                print()
         
         # Ошибки
         if report['errors']:

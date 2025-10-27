@@ -43,17 +43,119 @@ def install_dependencies():
     """Установить зависимости."""
     print_step(2, 9, 'Установка зависимостей')
     
+    # Проверяем наличие прокси или проблем с сетью
+    print('Выполняется: pip install -r requirements.txt')
+    
+    # Сначала пробуем обычную установку
     try:
-        print('Выполняется: pip install -r requirements.txt')
         subprocess.run(
             [sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
-            check=True
+            check=True,
+            timeout=60  # 1 минут таймаут
         )
         print('[OK] Зависимости установлены успешно')
         return True
-    except subprocess.CalledProcessError:
-        print('[ОШИБКА] Не удалось установить зависимости')
+    except subprocess.CalledProcessError as e:
+        print(f'[ПРЕДУПРЕЖДЕНИЕ] Ошибка установки: {e}')
+        print('[ИНФО] Возможные причины: проблемы с сетью, прокси, или ограничения доступа')
+        
+        # Предлагаем альтернативные варианты
+        print('\nАльтернативные варианты установки:')
+        print('1. Использовать альтернативное зеркало PyPI')
+        print('2. Офлайн-установка (предварительно скачать пакеты)')
+        print('3. Установить зависимости вручную')
+        print('4. Пропустить установку зависимостей')
+        
+        choice = get_input('Выберите вариант (1-4)', '4')
+        
+        if choice == '1':
+            return install_with_mirror()
+        elif choice == '2':
+            return install_offline()
+        elif choice == '3':
+            return install_manual()
+        else:  # choice == '4'
+            print('[ПРЕДУПРЕЖДЕНИЕ] Установка зависимостей пропущена')
+            print('[ИНФО] Система может работать некорректно без зависимостей')
+            return True
+    
+    except subprocess.TimeoutExpired:
+        print('[ОШИБКА] Таймаут установки зависимостей (1 минута)')
+        print('[ИНФО] Попробуйте использовать альтернативные методы установки')
         return False
+
+
+def install_with_mirror():
+    """Установить зависимости через альтернативное зеркало."""
+    print('\n=== Установка через альтернативное зеркало ===')
+    
+    # Популярные зеркала PyPI
+    mirrors = [
+        'https://pypi.org/simple',
+        'https://pypi.douban.com/simple',
+        'https://mirrors.aliyun.com/pypi/simple',
+        'https://pypi.tuna.tsinghua.edu.cn/simple'
+    ]
+    
+    print('Доступные зеркала:')
+    for i, mirror in enumerate(mirrors, 1):
+        print(f'  {i}. {mirror}')
+    
+    choice = get_input('Выберите зеркало (1-4)', '1')
+    try:
+        mirror_index = int(choice) - 1
+        if 0 <= mirror_index < len(mirrors):
+            selected_mirror = mirrors[mirror_index]
+        else:
+            selected_mirror = mirrors[0]
+    except ValueError:
+        selected_mirror = mirrors[0]
+    
+    print(f'Используется зеркало: {selected_mirror}')
+    
+    try:
+        subprocess.run([
+            sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt',
+            '-i', selected_mirror, '--trusted-host', selected_mirror.split('//')[1].split('/')[0]
+        ], check=True, timeout=120)
+        print('[OK] Зависимости установлены через зеркало')
+        return True
+    except subprocess.CalledProcessError:
+        print('[ОШИБКА] Не удалось установить через зеркало')
+        return False
+
+
+def install_offline():
+    """Предложить инструкции для офлайн-установки."""
+    print('\n=== Офлайн-установка зависимостей ===')
+    print('Для офлайн-установки выполните следующие шаги:')
+    print()
+    print('1. На компьютере с доступом к интернету выполните:')
+    print('   pip download -r requirements.txt -d ./offline_packages')
+    print()
+    print('2. Скопируйте папку "offline_packages" на этот компьютер')
+    print()
+    print('3. Установите пакеты командой:')
+    print('   pip install --no-index --find-links=./offline_packages -r requirements.txt')
+    print()
+    print('4. После установки нажмите Enter для продолжения...')
+    input()
+    return True
+
+
+def install_manual():
+    """Предложить ручную установку."""
+    print('\n=== Ручная установка зависимостей ===')
+    print('Установите зависимости вручную:')
+    print()
+    print('pip install psutil>=5.9.0')
+    print('pip install pytest>=7.4.0')
+    print('pip install pytest-cov>=4.1.0')
+    print('pip install pytest-mock>=3.11.0')
+    print()
+    print('После установки нажмите Enter для продолжения...')
+    input()
+    return True
 
 
 def get_input(prompt, default=None):
@@ -77,17 +179,35 @@ def get_yes_no(prompt, default=True):
     return user_input in ['y', 'yes', 'да', 'д']
 
 
-def get_paths(prompt):
+def get_paths(prompt, default_paths=None):
     """Получить список путей от пользователя."""
     print(f'\n{prompt}')
-    print('Введите пути по одному (пустая строка для завершения):')
     
     paths = []
-    while True:
-        path = input(f'  Путь {len(paths) + 1}: ').strip()
-        if not path:
-            break
-        paths.append(path)
+    
+    if default_paths:
+        print('Предлагаемые пути:')
+        for i, path in enumerate(default_paths, 1):
+            print(f'  {i}. {path}')
+        
+        use_defaults = get_yes_no('Использовать предлагаемые пути?', True)
+        if use_defaults:
+            paths = default_paths.copy()
+            print(f'[OK] Используются пути: {", ".join(paths)}')
+        else:
+            print('\nВведите собственные пути (пустая строка для завершения):')
+            while True:
+                path = input(f'  Путь {len(paths) + 1}: ').strip()
+                if not path:
+                    break
+                paths.append(path)
+    else:
+        print('Введите пути по одному (пустая строка для завершения):')
+        while True:
+            path = input(f'  Путь {len(paths) + 1}: ').strip()
+            if not path:
+                break
+            paths.append(path)
     
     return paths
 
@@ -99,8 +219,12 @@ def configure_git():
     config = {
         'repos': [],
         'searchPaths': [],
-        'sizeThresholdGB': 15
+        'sizeThresholdGB': 15,
+        'searchDepth': 3
     }
+    
+    # Пути по умолчанию для Git
+    default_git_paths = ['c:\\git']
     
     # Явные репозитории
     if get_yes_no('Указать конкретные Git-репозитории?', False):
@@ -108,7 +232,24 @@ def configure_git():
     
     # Пути для поиска
     if get_yes_no('Указать папки для автоматического поиска репозиториев?', True):
-        config['searchPaths'] = get_paths('Укажите папки для поиска')
+        config['searchPaths'] = get_paths('Укажите папки для поиска', default_git_paths)
+        
+        # Настройка глубины поиска
+        print('\nНастройка глубины поиска репозиториев:')
+        print('Глубина поиска определяет максимальный уровень вложенности папок')
+        print('для поиска Git-репозиториев (1 = только в корне папки)')
+        
+        depth = get_input('Максимальная глубина поиска (1-10)', '3')
+        try:
+            depth_int = int(depth)
+            if 1 <= depth_int <= 10:
+                config['searchDepth'] = depth_int
+            else:
+                print('[ПРЕДУПРЕЖДЕНИЕ] Глубина должна быть от 1 до 10, используется значение по умолчанию: 3')
+                config['searchDepth'] = 3
+        except ValueError:
+            print('[ПРЕДУПРЕЖДЕНИЕ] Неверное значение глубины, используется значение по умолчанию: 3')
+            config['searchDepth'] = 3
     
     # Порог размера
     threshold = get_input('Порог размера для обслуживания (ГБ)', '15')
@@ -127,8 +268,12 @@ def configure_edt():
     config = {
         'workspaces': [],
         'searchPaths': [],
-        'sizeThresholdGB': 5
+        'sizeThresholdGB': 5,
+        'searchDepth': 3
     }
+    
+    # Пути по умолчанию для EDT
+    default_edt_paths = ['c:\\edt']
     
     # Явные workspaces
     if get_yes_no('Указать конкретные EDT workspaces?', False):
@@ -136,7 +281,24 @@ def configure_edt():
     
     # Пути для поиска
     if get_yes_no('Указать папки для автоматического поиска workspaces?', True):
-        config['searchPaths'] = get_paths('Укажите папки для поиска')
+        config['searchPaths'] = get_paths('Укажите папки для поиска', default_edt_paths)
+        
+        # Настройка глубины поиска
+        print('\nНастройка глубины поиска workspaces:')
+        print('Глубина поиска определяет максимальный уровень вложенности папок')
+        print('для поиска EDT workspaces (1 = только в корне папки)')
+        
+        depth = get_input('Максимальная глубина поиска (1-10)', '3')
+        try:
+            depth_int = int(depth)
+            if 1 <= depth_int <= 10:
+                config['searchDepth'] = depth_int
+            else:
+                print('[ПРЕДУПРЕЖДЕНИЕ] Глубина должна быть от 1 до 10, используется значение по умолчанию: 3')
+                config['searchDepth'] = 3
+        except ValueError:
+            print('[ПРЕДУПРЕЖДЕНИЕ] Неверное значение глубины, используется значение по умолчанию: 3')
+            config['searchDepth'] = 3
     
     # Порог размера
     threshold = get_input('Порог размера для обслуживания (ГБ)', '5')
@@ -156,8 +318,12 @@ def configure_database():
         'databases': [],
         'searchPaths': [],
         'platformVersion': '',
-        'sizeThresholdGB': 3
+        'sizeThresholdGB': 3,
+        'searchDepth': 3
     }
+    
+    # Пути по умолчанию для баз 1С
+    default_db_paths = ['c:\\bases']
     
     # Явные базы
     if get_yes_no('Указать конкретные базы данных (.1CD)?', False):
@@ -165,7 +331,24 @@ def configure_database():
     
     # Пути для поиска
     if get_yes_no('Указать папки для автоматического поиска баз?', True):
-        config['searchPaths'] = get_paths('Укажите папки для поиска')
+        config['searchPaths'] = get_paths('Укажите папки для поиска', default_db_paths)
+        
+        # Настройка глубины поиска
+        print('\nНастройка глубины поиска баз данных:')
+        print('Глубина поиска определяет максимальный уровень вложенности папок')
+        print('для поиска файлов баз данных .1CD (1 = только в корне папки)')
+        
+        depth = get_input('Максимальная глубина поиска (1-10)', '3')
+        try:
+            depth_int = int(depth)
+            if 1 <= depth_int <= 10:
+                config['searchDepth'] = depth_int
+            else:
+                print('[ПРЕДУПРЕЖДЕНИЕ] Глубина должна быть от 1 до 10, используется значение по умолчанию: 3')
+                config['searchDepth'] = 3
+        except ValueError:
+            print('[ПРЕДУПРЕЖДЕНИЕ] Неверное значение глубины, используется значение по умолчанию: 3')
+            config['searchDepth'] = 3
     
     # Версия платформы
     print('\nВерсия платформы 1С (примеры: 8.3.27, 8.3.*, 8.3.2[0-9])')

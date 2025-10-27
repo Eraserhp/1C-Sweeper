@@ -42,7 +42,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/yourusername/1C-Sweeper.git
+git clone https://github.com/eraserhp/1C-Sweeper.git
 cd 1C-Sweeper
 ```
 
@@ -192,6 +192,64 @@ schtasks /Delete /TN "1C-Sweeper-Maintenance" /F
 schtasks /Change /TN "1C-Sweeper-Maintenance" /SC DAILY /ST 23:00
 ```
 
+## Деинсталляция
+
+### Автоматическая деинсталляция
+
+Для полного удаления системы 1C-Sweeper используйте деинсталлятор:
+
+```bash
+# Интерактивная деинсталляция
+python uninstall.py
+
+# Принудительное удаление без запросов
+python uninstall.py --force
+
+# Сохранить отчеты при удалении
+python uninstall.py --keep-reports
+
+# Сохранить зависимости при удалении
+python uninstall.py --keep-dependencies
+
+# Сохранить исходные файлы при удалении
+python uninstall.py --keep-source
+
+# Комбинированные опции
+python uninstall.py --force --keep-reports --keep-dependencies
+```
+
+Деинсталлятор выполнит:
+
+- ✅ Удаление задачи из планировщика Windows
+- ✅ Удаление конфигурационных файлов (`maintenance-config.json`)
+- ✅ Обработку директории с отчетами (с запросом подтверждения)
+- ✅ Удаление Python-зависимостей (опционально)
+- ✅ Удаление исходных файлов системы (опционально)
+
+### Ручная деинсталляция
+
+Если автоматический деинсталлятор недоступен:
+
+```bash
+# Удаление задачи планировщика
+schtasks /Delete /TN "1C-Sweeper-Maintenance" /F
+
+# Удаление конфигурации
+del maintenance-config.json
+
+# Удаление директории с отчетами (опционально)
+rmdir /s reports
+
+# Удаление зависимостей (опционально)
+pip uninstall psutil pytest pytest-cov pytest-mock -y
+```
+
+### Важные замечания
+
+- **Зависимости**: При удалении Python-пакетов убедитесь, что они не используются другими проектами
+- **Отчеты**: Рекомендуется сохранить отчеты для анализа эффективности работы системы
+- **Конфигурация**: Сохраните `maintenance-config.json` если планируете переустановку
+
 ## Отчеты
 
 ### Формат отчетов
@@ -315,6 +373,7 @@ pytest tests/test_utils.py
 ├── tests/                  # Тесты
 ├── docs/                   # Документация
 ├── install.py              # Установщик
+├── uninstall.py            # Деинсталлятор
 ├── requirements.txt        # Зависимости
 └── README.md              # Этот файл
 ```
