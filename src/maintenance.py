@@ -14,6 +14,7 @@ from .git_handler import GitHandler
 from .edt_handler import EdtHandler
 from .db_handler import DatabaseHandler
 from .reporter import Reporter
+from .utils import format_log_message
 
 
 class MaintenanceSystem:
@@ -83,21 +84,21 @@ class MaintenanceSystem:
     def log_info(self, message: str):
         """Вывести информационное сообщение."""
         if not self.silent:
-            print(f'[INFO] {message}')
+            print(format_log_message('INFO', message))
     
     def log_success(self, message: str):
         """Вывести сообщение об успехе."""
         if not self.silent:
-            print(f'[SUCCESS] {message}')
+            print(format_log_message('SUCCESS', message))
     
     def log_warning(self, message: str):
         """Вывести предупреждение."""
         if not self.silent:
-            print(f'[WARNING] {message}')
+            print(format_log_message('WARNING', message))
     
     def log_error(self, message: str):
         """Вывести сообщение об ошибке (даже в тихом режиме)."""
-        print(f'[ERROR] {message}', file=sys.stderr)
+        print(format_log_message('ERROR', message), file=sys.stderr)
     
     def run(self) -> int:
         """

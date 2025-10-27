@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import psutil
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -321,4 +322,30 @@ def ensure_dir(dirpath: str) -> bool:
         return True
     except (OSError, PermissionError):
         return False
+
+
+def get_timestamp() -> str:
+    """
+    Получить текущую временную метку в формате для логов.
+    
+    Returns:
+        Строка с временной меткой в формате [YYYY-MM-DD HH:MM:SS]
+    """
+    now = datetime.now()
+    return now.strftime('[%Y-%m-%d %H:%M:%S]')
+
+
+def format_log_message(level: str, message: str) -> str:
+    """
+    Форматировать сообщение лога с временной меткой.
+    
+    Args:
+        level: Уровень лога (INFO, OK, ERROR, WARNING, SUCCESS)
+        message: Текст сообщения
+        
+    Returns:
+        Отформатированное сообщение с временной меткой
+    """
+    timestamp = get_timestamp()
+    return f'{timestamp} [{level}] {message}'
 

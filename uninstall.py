@@ -9,7 +9,20 @@ import json
 import subprocess
 import shutil
 import argparse
+from datetime import datetime
 from pathlib import Path
+
+
+def get_timestamp():
+    """Получить текущую временную метку."""
+    now = datetime.now()
+    return now.strftime('[%Y-%m-%d %H:%M:%S]')
+
+
+def log_message(level, message):
+    """Вывести сообщение с временной меткой."""
+    timestamp = get_timestamp()
+    print(f'{timestamp} [{level}] {message}')
 
 
 def print_header(text):
@@ -86,17 +99,17 @@ def remove_task_scheduler():
             )
             
             if delete_result.returncode == 0:
-                print(f'[OK] Задача "{task_name}" удалена из планировщика')
+                log_message('OK', f'Задача "{task_name}" удалена из планировщика')
                 return True
             else:
-                print(f'[ОШИБКА] Не удалось удалить задачу: {delete_result.stderr}')
+                log_message('ОШИБКА', f'Не удалось удалить задачу: {delete_result.stderr}')
                 return False
         else:
-            print('[ИНФО] Задача не найдена в планировщике')
+            log_message('ИНФО', 'Задача не найдена в планировщике')
             return True
             
     except Exception as e:
-        print(f'[ОШИБКА] Ошибка при работе с планировщиком: {e}')
+        log_message('ОШИБКА', f'Ошибка при работе с планировщиком: {e}')
         return False
 
 
@@ -114,17 +127,17 @@ def remove_configuration():
         if os.path.exists(config_file):
             try:
                 os.remove(config_file)
-                print(f'[OK] Удален файл: {config_file}')
+                log_message('OK', f'Удален файл: {config_file}')
                 removed_count += 1
             except Exception as e:
-                print(f'[ОШИБКА] Не удалось удалить {config_file}: {e}')
+                log_message('ОШИБКА', f'Не удалось удалить {config_file}: {e}')
         else:
-            print(f'[ИНФО] Файл не найден: {config_file}')
+            log_message('ИНФО', f'Файл не найден: {config_file}')
     
     if removed_count > 0:
-        print(f'[OK] Удалено конфигурационных файлов: {removed_count}')
+        log_message('OK', f'Удалено конфигурационных файлов: {removed_count}')
     else:
-        print('[ИНФО] Конфигурационные файлы не найдены')
+        log_message('ИНФО', 'Конфигурационные файлы не найдены')
     
     return True
 

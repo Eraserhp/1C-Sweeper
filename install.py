@@ -8,7 +8,20 @@ import sys
 import json
 import subprocess
 import base64
+from datetime import datetime
 from pathlib import Path
+
+
+def get_timestamp():
+    """Получить текущую временную метку."""
+    now = datetime.now()
+    return now.strftime('[%Y-%m-%d %H:%M:%S]')
+
+
+def log_message(level, message):
+    """Вывести сообщение с временной меткой."""
+    timestamp = get_timestamp()
+    print(f'{timestamp} [{level}] {message}')
 
 
 def print_header(text):
@@ -32,10 +45,10 @@ def check_python_version():
     print(f'Установленная версия Python: {version.major}.{version.minor}.{version.micro}')
     
     if version.major < 3 or (version.major == 3 and version.minor < 8):
-        print('[ОШИБКА] Требуется Python 3.8 или выше!')
+        log_message('ОШИБКА', 'Требуется Python 3.8 или выше!')
         return False
     
-    print('[OK] Версия Python подходит')
+    log_message('OK', 'Версия Python подходит')
     return True
 
 
@@ -53,11 +66,11 @@ def install_dependencies():
             check=True,
             timeout=60  # 1 минут таймаут
         )
-        print('[OK] Зависимости установлены успешно')
+        log_message('OK', 'Зависимости установлены успешно')
         return True
     except subprocess.CalledProcessError as e:
-        print(f'[ПРЕДУПРЕЖДЕНИЕ] Ошибка установки: {e}')
-        print('[ИНФО] Возможные причины: проблемы с сетью, прокси, или ограничения доступа')
+        log_message('ПРЕДУПРЕЖДЕНИЕ', f'Ошибка установки: {e}')
+        log_message('ИНФО', 'Возможные причины: проблемы с сетью, прокси, или ограничения доступа')
         
         # Предлагаем альтернативные варианты
         print('\nАльтернативные варианты установки:')
@@ -75,13 +88,13 @@ def install_dependencies():
         elif choice == '3':
             return install_manual()
         else:  # choice == '4'
-            print('[ПРЕДУПРЕЖДЕНИЕ] Установка зависимостей пропущена')
-            print('[ИНФО] Система может работать некорректно без зависимостей')
+            log_message('ПРЕДУПРЕЖДЕНИЕ', 'Установка зависимостей пропущена')
+            log_message('ИНФО', 'Система может работать некорректно без зависимостей')
             return True
     
     except subprocess.TimeoutExpired:
-        print('[ОШИБКА] Таймаут установки зависимостей (1 минута)')
-        print('[ИНФО] Попробуйте использовать альтернативные методы установки')
+        log_message('ОШИБКА', 'Таймаут установки зависимостей (1 минута)')
+        log_message('ИНФО', 'Попробуйте использовать альтернативные методы установки')
         return False
 
 
@@ -118,10 +131,10 @@ def install_with_mirror():
             sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt',
             '-i', selected_mirror, '--trusted-host', selected_mirror.split('//')[1].split('/')[0]
         ], check=True, timeout=120)
-        print('[OK] Зависимости установлены через зеркало')
+        log_message('OK', 'Зависимости установлены через зеркало')
         return True
     except subprocess.CalledProcessError:
-        print('[ОШИБКА] Не удалось установить через зеркало')
+        log_message('ОШИБКА', 'Не удалось установить через зеркало')
         return False
 
 
@@ -412,10 +425,10 @@ def save_configuration(config):
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
-        print(f'[OK] Конфигурация сохранена в {config_path}')
+        log_message('OK', f'Конфигурация сохранена в {config_path}')
         return True
     except Exception as e:
-        print(f'[ОШИБКА] Не удалось сохранить конфигурацию: {e}')
+        log_message('ОШИБКА', f'Не удалось сохранить конфигурацию: {e}')
         return False
 
 
@@ -423,10 +436,10 @@ def create_reports_directory(reports_path):
     """Создать директорию для отчетов."""
     try:
         os.makedirs(reports_path, exist_ok=True)
-        print(f'[OK] Создана директория для отчетов: {reports_path}')
+        log_message('OK', f'Создана директория для отчетов: {reports_path}')
         return True
     except Exception as e:
-        print(f'[ОШИБКА] Не удалось создать директорию: {e}')
+        log_message('ОШИБКА', f'Не удалось создать директорию: {e}')
         return False
 
 
@@ -435,7 +448,7 @@ def setup_task_scheduler():
     print_step(8, 9, 'Настройка планировщика задач Windows')
     
     if not get_yes_no('Настроить автоматический запуск по расписанию?', True):
-        print('[ПРОПУЩЕНО] Настройка планировщика пропущена')
+        log_message('ПРОПУЩЕНО', 'Настройка планировщика пропущена')
         return True
     
     task_name = '1C-Sweeper-Maintenance'
@@ -447,22 +460,22 @@ def setup_task_scheduler():
     
     # Параметры задачи
     print('\nПараметры расписания:')
-    print('1. Еженедельно (воскресенье 22:00)')
+    print('1. Еженедельно (суббота 22:00)')
     print('2. Ежедневно (22:00)')
-    print('3. Ежемесячно (первое воскресенье, 22:00)')
+    print('3. Ежемесячно (первая суббота, 22:00)')
     
     choice = get_input('Выберите вариант', '1')
     
     # Формируем команду для создания задачи
     if choice == '1':
         schedule = 'WEEKLY'
-        modifier = '/D SUN /ST 22:00'
+        modifier = '/D SAT /ST 22:00'
     elif choice == '2':
         schedule = 'DAILY'
         modifier = '/ST 22:00'
     else:
         schedule = 'MONTHLY'
-        modifier = '/D SUN /MO FIRST /ST 22:00'
+        modifier = '/D SAT /MO FIRST /ST 22:00'
     
     # Команда для запуска
     run_command = f'"{python_exe}" "{maintenance_script}" --silent'
@@ -486,25 +499,25 @@ def setup_task_scheduler():
         
         # Добавляем модификаторы
         if choice == '1':
-            cmd.extend(['/D', 'SUN', '/ST', '22:00'])
+            cmd.extend(['/D', 'SAT', '/ST', '22:00'])
         elif choice == '2':
             cmd.extend(['/ST', '22:00'])
         else:
-            cmd.extend(['/D', 'SUN', '/MO', 'FIRST', '/ST', '22:00'])
+            cmd.extend(['/D', 'SAT', '/MO', 'FIRST', '/ST', '22:00'])
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode == 0:
-            print(f'[OK] Задача "{task_name}" создана успешно')
+            log_message('OK', f'Задача "{task_name}" создана успешно')
             print(f'     Расписание: {schedule}')
             return True
         else:
-            print(f'[ОШИБКА] Не удалось создать задачу: {result.stderr}')
+            log_message('ОШИБКА', f'Не удалось создать задачу: {result.stderr}')
             print('[СПРАВКА] Возможно требуются права администратора')
             return False
     
     except Exception as e:
-        print(f'[ОШИБКА] Ошибка при создании задачи: {e}')
+        log_message('ОШИБКА', f'Ошибка при создании задачи: {e}')
         return False
 
 
@@ -513,7 +526,7 @@ def run_test():
     print_step(9, 9, 'Тестовый запуск')
     
     if not get_yes_no('Выполнить тестовый запуск?', True):
-        print('[ПРОПУЩЕНО] Тестовый запуск пропущен')
+        log_message('ПРОПУЩЕНО', 'Тестовый запуск пропущен')
         return True
     
     try:
@@ -526,14 +539,14 @@ def run_test():
         )
         
         if result.returncode == 0:
-            print('\n[OK] Тестовый запуск завершен успешно')
+            log_message('OK', 'Тестовый запуск завершен успешно')
             return True
         else:
-            print(f'\n[ПРЕДУПРЕЖДЕНИЕ] Тестовый запуск завершен с кодом {result.returncode}')
+            log_message('ПРЕДУПРЕЖДЕНИЕ', f'Тестовый запуск завершен с кодом {result.returncode}')
             return True  # Не считаем это критичной ошибкой
     
     except Exception as e:
-        print(f'\n[ОШИБКА] Ошибка при тестовом запуске: {e}')
+        log_message('ОШИБКА', f'Ошибка при тестовом запуске: {e}')
         return False
 
 
@@ -582,7 +595,7 @@ def main():
     
     # Финальное сообщение
     print_header('УСТАНОВКА ЗАВЕРШЕНА')
-    print('[OK] Система 1C-Sweeper успешно установлена и настроена!')
+    log_message('OK', 'Система 1C-Sweeper успешно установлена и настроена!')
     print()
     print('Для ручного запуска используйте:')
     print(f'  python -m src.maintenance')
