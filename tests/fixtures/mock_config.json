@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "git": {
+      "repos": [
+        "C:\\Dev\\TestRepo1"
+      ],
+      "searchPaths": [
+        "C:\\Dev"
+      ],
+      "sizeThresholdGB": 15
+    },
+    "edt": {
+      "workspaces": [
+        "C:\\EDT\\TestWorkspace1"
+      ],
+      "searchPaths": [
+        "C:\\EDT"
+      ],
+      "sizeThresholdGB": 5
+    },
+    "database": {
+      "databases": [
+        "C:\\Bases\\Test\\1Cv8.1CD"
+      ],
+      "searchPaths": [
+        "C:\\Bases"
+      ],
+      "platformVersion": "8.3.27",
+      "user": "Admin",
+      "password": "QWRtaW4=",
+      "sizeThresholdGB": 3
+    },
+    "general": {
+      "reportsPath": "./reports",
+      "silentMode": false,
+      "parallelProcessing": false,
+      "maxParallelTasks": 2
+    }
+  }
+}
+

@@ -1,0 +1,8 @@
+# Production dependencies
+psutil>=5.9.0
+
+# Development dependencies (testing)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
